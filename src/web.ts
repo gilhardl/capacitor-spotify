@@ -8,11 +8,6 @@ export class SpotifySDKWeb extends WebPlugin implements SpotifySDKPlugin {
       platforms: ['web']
     });
   }
-
-  async echo(options: { value: string }): Promise<{value: string}> {
-    console.log('ECHO', options);
-    return options;
-  }
 }
 
 const SpotifySDK = new SpotifySDKWeb();

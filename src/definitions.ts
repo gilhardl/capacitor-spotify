@@ -4,6 +4,4 @@ declare module "@capacitor/core" {
   }
 }
 
-export interface SpotifySDKPlugin {
-  echo(options: { value: string }): Promise<{value: string}>;
-}
+export interface SpotifySDKPlugin {}
