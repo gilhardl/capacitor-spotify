@@ -26,7 +26,6 @@ public class SpotifySDK extends Plugin {
     private static Integer LOGIN_REQUEST_CODE;
 
     private SpotifyAppRemote mSpotifyAppRemote;
-    private PluginCall loginCall;
 
     @PluginMethod()
     public void initialize(PluginCall call) {
@@ -50,6 +49,8 @@ public class SpotifySDK extends Plugin {
 
     @PluginMethod()
     public void login(PluginCall call) {
+        saveCall(call);
+
         AuthorizationRequest.Builder builder =
                 new AuthorizationRequest.Builder(CLIENT_ID, AuthorizationResponse.Type.TOKEN, REDIRECT_URI);
 
@@ -57,8 +58,6 @@ public class SpotifySDK extends Plugin {
         AuthorizationRequest request = builder.build();
 
         AuthorizationClient.openLoginActivity(getActivity(), LOGIN_REQUEST_CODE, request);
-
-        this.loginCall = call;
     }
 
     @Override
@@ -69,6 +68,7 @@ public class SpotifySDK extends Plugin {
         if (requestCode == LOGIN_REQUEST_CODE) {
             AuthorizationResponse response = AuthorizationClient.getResponse(resultCode, intent);
 
+            PluginCall savedCall = getSavedCall();
             JSObject result = new JSObject();
 
             switch (response.getType()) {
@@ -77,23 +77,21 @@ public class SpotifySDK extends Plugin {
                     // Handle successful response
                     result.put("result", true);
                     result.put("accessToken", response.getAccessToken());
-                    this.loginCall.resolve(result);
+                    savedCall.resolve(result);
                     break;
 
                 // Auth flow returned an error
                 case ERROR:
                     // Handle error response
-                    this.loginCall.reject(response.getError());
+                    savedCall.reject(response.getError());
                     break;
 
                 // Most likely auth flow was cancelled
                 default:
                     // Handle other cases
                     result.put("result", false);
-                    this.loginCall.resolve(result);
+                    savedCall.resolve(result);
             }
-
-            this.loginCall = null;
         }
     }
 
