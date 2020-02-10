@@ -1,6 +1,6 @@
 {
   "name": "capacitor-spotify",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Wrapper for natives Spotify SDK",
   "main": "dist/esm/index.js",
   "types": "dist/esm/index.d.ts",
