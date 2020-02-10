@@ -1,2 +1,2 @@
-include ':capacitor-android', ':spotify-app-remote'
+include ':capacitor-android', ':spotify-app-remote', ':spotify-auth'
 project(':capacitor-android').projectDir = new File('../node_modules/@capacitor/android/capacitor')
