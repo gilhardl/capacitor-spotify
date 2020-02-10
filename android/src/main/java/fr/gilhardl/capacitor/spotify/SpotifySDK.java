@@ -1,6 +1,7 @@
 package fr.gilhardl.capacitor.spotify;
 
 import android.content.Intent;
+import android.util.Log;
 
 import com.getcapacitor.JSObject;
 import com.getcapacitor.NativePlugin;
@@ -57,18 +58,24 @@ public class SpotifySDK extends Plugin {
         builder.setScopes(new String[]{"streaming"});
         AuthorizationRequest request = builder.build();
 
-        AuthorizationClient.openLoginActivity(getActivity(), LOGIN_REQUEST_CODE, request);
+        // AuthorizationClient.openLoginActivity(getActivity(), LOGIN_REQUEST_CODE, request);
+        Intent intent = AuthorizationClient.createLoginActivityIntent(getActivity(), request);
+        startActivityForResult(call, intent, LOGIN_REQUEST_CODE);
     }
 
     @Override
     protected void handleOnActivityResult(int requestCode, int resultCode, Intent intent) {
         super.handleOnActivityResult(requestCode, resultCode, intent);
+        PluginCall savedCall = getSavedCall();
+        if (savedCall == null) {
+            Log.i("SpotifySDKPlugin", "Saved Call is null");
+            return;
+        }
 
         // Check if result comes from the correct activity
         if (requestCode == LOGIN_REQUEST_CODE) {
             AuthorizationResponse response = AuthorizationClient.getResponse(resultCode, intent);
 
-            PluginCall savedCall = getSavedCall();
             JSObject result = new JSObject();
 
             switch (response.getType()) {
