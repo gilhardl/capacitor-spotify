@@ -11,10 +11,21 @@ export class SpotifySDKWeb extends WebPlugin implements SpotifySDKPlugin {
     });
   }
 
-  async initializeAppRemote(options: {
+  async initialize(options: {
     clientId: string;
     redirectUri: string;
+    loginRequestCode: number;
   }): Promise<{ result: boolean }> {
+    console.error(errorMessage);
+    throw errorMessage;
+  }
+
+  async login(): Promise<{ result: boolean }> {
+    console.error(errorMessage);
+    throw errorMessage;
+  }
+
+  async logout(): Promise<{ result: boolean }> {
     console.error(errorMessage);
     throw errorMessage;
   }
@@ -29,7 +40,9 @@ export class SpotifySDKWeb extends WebPlugin implements SpotifySDKPlugin {
     throw errorMessage;
   }
 
-  async getCrossfadeState(): Promise<{ crossfadeState: CrossfadeState }> {
+  async getCrossfadeState(): Promise<{
+    crossfadeState: CrossfadeState;
+  }> {
     console.error(errorMessage);
     throw errorMessage;
   }
