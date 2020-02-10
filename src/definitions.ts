@@ -68,10 +68,15 @@ export type ImageUri = {
 };
 
 export interface SpotifySDKPlugin {
-  initializeAppRemote(options: {
+  initialize(options: {
     clientId: string;
     redirectUri: string;
+    loginRequestCode: number;
   }): Promise<{ result: boolean }>;
+
+  login(): Promise<{ result: boolean }>;
+
+  logout(): Promise<{ result: boolean }>;
 
   connectToAppRemote(): Promise<{ result: boolean }>;
 
