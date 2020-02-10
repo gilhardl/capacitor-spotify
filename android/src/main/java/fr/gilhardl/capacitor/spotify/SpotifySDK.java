@@ -1,43 +1,109 @@
 package fr.gilhardl.capacitor.spotify;
 
+import android.content.Intent;
+
 import com.getcapacitor.JSObject;
 import com.getcapacitor.NativePlugin;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
-
 import com.spotify.android.appremote.api.ConnectionParams;
 import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.SpotifyAppRemote;
-
-import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.client.CallResult;
+import com.spotify.protocol.client.Subscription;
 import com.spotify.protocol.types.CrossfadeState;
 import com.spotify.protocol.types.PlayerContext;
 import com.spotify.protocol.types.PlayerState;
+import com.spotify.sdk.android.auth.AuthorizationClient;
+import com.spotify.sdk.android.auth.AuthorizationRequest;
+import com.spotify.sdk.android.auth.AuthorizationResponse;
 
 @NativePlugin()
 public class SpotifySDK extends Plugin {
     private static String CLIENT_ID;
     private static String REDIRECT_URI;
+    private static Integer LOGIN_REQUEST_CODE;
+
     private SpotifyAppRemote mSpotifyAppRemote;
+    private PluginCall loginCall;
 
     @PluginMethod()
-    public void initializeAppRemote(PluginCall call) {
+    public void initialize(PluginCall call) {
         String clientId = call.getString("clientId");
         String redirectUri = call.getString("redirectUri");
+        Integer loginRequestCode = call.getInt("loginRequestCode");
 
-        if (clientId == null || redirectUri == null) {
-            call.reject("Client ID or redirect URI missing");
+        if (clientId == null || redirectUri == null || loginRequestCode == null) {
+            call.reject("Client ID, redirect URI or login activity's request code missing");
             return;
         }
 
         CLIENT_ID = clientId;
         REDIRECT_URI = redirectUri;
+        LOGIN_REQUEST_CODE = loginRequestCode;
 
         JSObject result = new JSObject();
         result.put("result", true);
-        call.success(result);
+        call.resolve(result);
+    }
+
+    @PluginMethod()
+    public void login(PluginCall call) {
+        AuthorizationRequest.Builder builder =
+                new AuthorizationRequest.Builder(CLIENT_ID, AuthorizationResponse.Type.TOKEN, REDIRECT_URI);
+
+        builder.setScopes(new String[]{"streaming"});
+        AuthorizationRequest request = builder.build();
+
+        AuthorizationClient.openLoginActivity(getActivity(), LOGIN_REQUEST_CODE, request);
+
+        this.loginCall = call;
+    }
+
+    @Override
+    protected void handleOnActivityResult(int requestCode, int resultCode, Intent intent) {
+        super.handleOnActivityResult(requestCode, resultCode, intent);
+
+        // Check if result comes from the correct activity
+        if (requestCode == LOGIN_REQUEST_CODE) {
+            AuthorizationResponse response = AuthorizationClient.getResponse(resultCode, intent);
+
+            JSObject result = new JSObject();
+
+            switch (response.getType()) {
+                // Response was successful and contains auth token
+                case TOKEN:
+                    // Handle successful response
+                    result.put("result", true);
+                    result.put("accessToken", response.getAccessToken());
+                    this.loginCall.resolve(result);
+                    break;
+
+                // Auth flow returned an error
+                case ERROR:
+                    // Handle error response
+                    this.loginCall.reject(response.getError());
+                    break;
+
+                // Most likely auth flow was cancelled
+                default:
+                    // Handle other cases
+                    result.put("result", false);
+                    this.loginCall.resolve(result);
+            }
+
+            this.loginCall = null;
+        }
+    }
+
+    @PluginMethod()
+    public void logout(PluginCall call) {
+        AuthorizationClient.clearCookies(getContext());
+
+        JSObject result = new JSObject();
+        result.put("result", true);
+        call.resolve(result);
     }
 
     @PluginMethod()
