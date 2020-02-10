@@ -22,6 +22,7 @@ import com.spotify.sdk.android.auth.AuthorizationResponse;
 
 @NativePlugin()
 public class SpotifySDK extends Plugin {
+    private static final String TAG = "SpotifySDK/Plugin";
     private static String CLIENT_ID;
     private static String REDIRECT_URI;
     private static Integer LOGIN_REQUEST_CODE;
@@ -58,7 +59,6 @@ public class SpotifySDK extends Plugin {
         builder.setScopes(new String[]{"streaming"});
         AuthorizationRequest request = builder.build();
 
-        // AuthorizationClient.openLoginActivity(getActivity(), LOGIN_REQUEST_CODE, request);
         Intent intent = AuthorizationClient.createLoginActivityIntent(getActivity(), request);
         startActivityForResult(call, intent, LOGIN_REQUEST_CODE);
     }
@@ -68,7 +68,7 @@ public class SpotifySDK extends Plugin {
         super.handleOnActivityResult(requestCode, resultCode, intent);
         PluginCall savedCall = getSavedCall();
         if (savedCall == null) {
-            Log.i("SpotifySDKPlugin", "Saved Call is null");
+            Log.i(TAG, "No capacitor saved call. Aborting result processing...");
             return;
         }
 
