@@ -71,7 +71,6 @@ export interface SpotifySDKPlugin {
   initialize(options: {
     clientId: string;
     redirectUri: string;
-    loginRequestCode: number;
   }): Promise<{ result: boolean }>;
 
   login(): Promise<{ result: boolean }>;

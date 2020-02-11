@@ -14,7 +14,6 @@ export class SpotifySDKWeb extends WebPlugin implements SpotifySDKPlugin {
   async initialize(options: {
     clientId: string;
     redirectUri: string;
-    loginRequestCode: number;
   }): Promise<{ result: boolean }> {
     console.error(errorMessage);
     throw errorMessage;
