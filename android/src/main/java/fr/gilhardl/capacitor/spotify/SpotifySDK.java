@@ -20,12 +20,15 @@ import com.spotify.sdk.android.auth.AuthorizationClient;
 import com.spotify.sdk.android.auth.AuthorizationRequest;
 import com.spotify.sdk.android.auth.AuthorizationResponse;
 
-@NativePlugin()
+@NativePlugin(
+    requestCodes={SpotifySDK.LOGIN_REQUEST_CODE}
+)
 public class SpotifySDK extends Plugin {
-    private static final String TAG = "SpotifySDK/Plugin";
-    private static String CLIENT_ID;
-    private static String REDIRECT_URI;
-    private static Integer LOGIN_REQUEST_CODE;
+    private static final String TAG = "Capacitor/SpotifySDK";
+
+    protected static String CLIENT_ID;
+    protected static String REDIRECT_URI;
+    protected static final int LOGIN_REQUEST_CODE = 12345;
 
     private SpotifyAppRemote mSpotifyAppRemote;
 
@@ -33,16 +36,14 @@ public class SpotifySDK extends Plugin {
     public void initialize(PluginCall call) {
         String clientId = call.getString("clientId");
         String redirectUri = call.getString("redirectUri");
-        Integer loginRequestCode = call.getInt("loginRequestCode");
 
-        if (clientId == null || redirectUri == null || loginRequestCode == null) {
-            call.reject("Client ID, redirect URI or login activity's request code missing");
+        if (clientId == null || redirectUri == null) {
+            call.reject("Client ID or redirect URI missing");
             return;
         }
 
         CLIENT_ID = clientId;
         REDIRECT_URI = redirectUri;
-        LOGIN_REQUEST_CODE = loginRequestCode;
 
         JSObject result = new JSObject();
         result.put("result", true);
@@ -50,7 +51,7 @@ public class SpotifySDK extends Plugin {
     }
 
     @PluginMethod()
-    public void login(PluginCall call) {
+    public void login(final PluginCall call) {
         saveCall(call);
 
         AuthorizationRequest.Builder builder =
@@ -103,7 +104,7 @@ public class SpotifySDK extends Plugin {
     }
 
     @PluginMethod()
-    public void logout(PluginCall call) {
+    public void logout(final PluginCall call) {
         AuthorizationClient.clearCookies(getContext());
 
         JSObject result = new JSObject();
