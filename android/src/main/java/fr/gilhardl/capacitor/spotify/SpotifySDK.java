@@ -260,9 +260,7 @@ public class SpotifySDK extends Plugin {
                     @Override
                     public void onEvent(final PlayerState playerState) {
                         Gson gson = new Gson();
-                        bridge.triggerWindowJSEvent("playerState", gson.toJson(new Object() {
-                            PlayerState state = playerState;
-                        }));
+                        bridge.triggerWindowJSEvent("playerState", gson.toJson(playerState));
                     }
                 });
     }
@@ -275,9 +273,7 @@ public class SpotifySDK extends Plugin {
                     @Override
                     public void onEvent(final PlayerContext playerContext) {
                         Gson gson = new Gson();
-                        bridge.triggerWindowJSEvent("playerContext", gson.toJson(new Object() {
-                            PlayerContext context = playerContext;
-                        }));
+                        bridge.triggerWindowJSEvent("playerContext", gson.toJson(playerContext));
                     }
                 });
     }
