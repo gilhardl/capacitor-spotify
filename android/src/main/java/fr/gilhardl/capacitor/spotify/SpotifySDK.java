@@ -258,11 +258,11 @@ public class SpotifySDK extends Plugin {
                 .subscribeToPlayerState()
                 .setEventCallback(new Subscription.EventCallback<PlayerState>() {
                     @Override
-                    public void onEvent(PlayerState playerState) {
-                        JSObject result = new JSObject();
+                    public void onEvent(final PlayerState playerState) {
                         Gson gson = new Gson();
-                        result.put("playerState", gson.toJson(playerState));
-                        bridge.triggerWindowJSEvent("playerState", gson.toJson(result));
+                        bridge.triggerWindowJSEvent("playerState", gson.toJson(new Object() {
+                            PlayerState state = playerState;
+                        }));
                     }
                 });
     }
@@ -273,11 +273,11 @@ public class SpotifySDK extends Plugin {
                 .subscribeToPlayerContext()
                 .setEventCallback(new Subscription.EventCallback<PlayerContext>() {
                     @Override
-                    public void onEvent(PlayerContext playerContext) {
-                        JSObject result = new JSObject();
+                    public void onEvent(final PlayerContext playerContext) {
                         Gson gson = new Gson();
-                        result.put("playerContext", gson.toJson(playerContext));
-                        bridge.triggerWindowJSEvent("playerContext", gson.toJson(result));
+                        bridge.triggerWindowJSEvent("playerContext", gson.toJson(new Object() {
+                            PlayerContext context = playerContext;
+                        }));
                     }
                 });
     }
