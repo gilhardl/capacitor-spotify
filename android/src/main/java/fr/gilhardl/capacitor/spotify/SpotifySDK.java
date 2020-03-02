@@ -3,11 +3,13 @@ package fr.gilhardl.capacitor.spotify;
 import android.content.Intent;
 import android.util.Log;
 
+import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.NativePlugin;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
+import com.google.gson.Gson;
 import com.spotify.android.appremote.api.ConnectionParams;
 import com.spotify.android.appremote.api.Connector;
 import com.spotify.android.appremote.api.SpotifyAppRemote;
@@ -20,15 +22,20 @@ import com.spotify.sdk.android.auth.AuthorizationClient;
 import com.spotify.sdk.android.auth.AuthorizationRequest;
 import com.spotify.sdk.android.auth.AuthorizationResponse;
 
+import org.json.JSONException;
+
+import java.util.List;
+
 @NativePlugin(
-    requestCodes={SpotifySDK.LOGIN_REQUEST_CODE}
+    requestCodes={SpotifySDK.ACCESS_TOKEN_REQUEST_RESULTCODE, SpotifySDK.AUTHORIZATION_CODE_REQUEST_RESULTCODE}
 )
 public class SpotifySDK extends Plugin {
     private static final String TAG = "Capacitor/SpotifySDK";
 
     protected static String CLIENT_ID;
     protected static String REDIRECT_URI;
-    protected static final int LOGIN_REQUEST_CODE = 12345;
+    protected static final int ACCESS_TOKEN_REQUEST_RESULTCODE = 12345;
+    protected static final int AUTHORIZATION_CODE_REQUEST_RESULTCODE = 12346;
 
     private SpotifyAppRemote mSpotifyAppRemote;
 
@@ -51,17 +58,59 @@ public class SpotifySDK extends Plugin {
     }
 
     @PluginMethod()
-    public void login(final PluginCall call) {
+    public void getAccessToken(final PluginCall call) {
+        JSArray scopesArray = call.getArray("scopes");
+        if (scopesArray == null) {
+            call.reject("Scopes missing");
+            return;
+        }
+        List<String> scopesList;
+        try {
+            scopesList = scopesArray.toList();
+        } catch (JSONException e) {
+            call.reject("Provided scopes format is invalid");
+            return;
+        }
         saveCall(call);
+
+        String[] scopes = scopesList.toArray(new String[0]);
 
         AuthorizationRequest.Builder builder =
                 new AuthorizationRequest.Builder(CLIENT_ID, AuthorizationResponse.Type.TOKEN, REDIRECT_URI);
 
-        builder.setScopes(new String[]{"streaming"});
+        builder.setScopes(scopes);
         AuthorizationRequest request = builder.build();
 
         Intent intent = AuthorizationClient.createLoginActivityIntent(getActivity(), request);
-        startActivityForResult(call, intent, LOGIN_REQUEST_CODE);
+        startActivityForResult(call, intent, ACCESS_TOKEN_REQUEST_RESULTCODE);
+    }
+
+    @PluginMethod()
+    public void getAuthorizationCode(final PluginCall call) {
+        JSArray scopesArray = call.getArray("scopes");
+        if (scopesArray == null) {
+            call.reject("Scopes missing");
+            return;
+        }
+        List<String> scopesList;
+        try {
+            scopesList = scopesArray.toList();
+        } catch (JSONException e) {
+            call.reject("Provided scopes format is invalid");
+            return;
+        }
+        saveCall(call);
+
+        String[] scopes = scopesList.toArray(new String[0]);
+
+        AuthorizationRequest.Builder builder =
+                new AuthorizationRequest.Builder(CLIENT_ID, AuthorizationResponse.Type.CODE, REDIRECT_URI);
+
+        builder.setScopes(scopes);
+        AuthorizationRequest request = builder.build();
+
+        Intent intent = AuthorizationClient.createLoginActivityIntent(getActivity(), request);
+        startActivityForResult(call, intent, AUTHORIZATION_CODE_REQUEST_RESULTCODE);
     }
 
     @Override
@@ -74,7 +123,7 @@ public class SpotifySDK extends Plugin {
         }
 
         // Check if result comes from the correct activity
-        if (requestCode == LOGIN_REQUEST_CODE) {
+        if (requestCode == ACCESS_TOKEN_REQUEST_RESULTCODE) {
             AuthorizationResponse response = AuthorizationClient.getResponse(resultCode, intent);
 
             JSObject result = new JSObject();
@@ -85,6 +134,32 @@ public class SpotifySDK extends Plugin {
                     // Handle successful response
                     result.put("result", true);
                     result.put("accessToken", response.getAccessToken());
+                    savedCall.resolve(result);
+                    break;
+
+                // Auth flow returned an error
+                case ERROR:
+                    // Handle error response
+                    savedCall.reject(response.getError());
+                    break;
+
+                // Most likely auth flow was cancelled
+                default:
+                    // Handle other cases
+                    result.put("result", false);
+                    savedCall.resolve(result);
+            }
+        } else if (requestCode == AUTHORIZATION_CODE_REQUEST_RESULTCODE) {
+            AuthorizationResponse response = AuthorizationClient.getResponse(resultCode, intent);
+
+            JSObject result = new JSObject();
+
+            switch (response.getType()) {
+                // Response was successful and contains auth token
+                case CODE:
+                    // Handle successful response
+                    result.put("result", true);
+                    result.put("code", response.getCode());
                     savedCall.resolve(result);
                     break;
 
@@ -155,7 +230,8 @@ public class SpotifySDK extends Plugin {
                     @Override
                     public void onResult(CrossfadeState crossfadeState) {
                         JSObject result = new JSObject();
-                        result.put("crossfadeState", crossfadeState);
+                        Gson gson = new Gson();
+                        result.put("crossfadeState", gson.toJson(crossfadeState));
                         call.resolve(result);
                     }
                 });
@@ -169,7 +245,8 @@ public class SpotifySDK extends Plugin {
                     @Override
                     public void onResult(PlayerState playerState) {
                         JSObject result = new JSObject();
-                        result.put("playerState", playerState);
+                        Gson gson = new Gson();
+                        result.put("playerState", gson.toJson(playerState));
                         call.resolve(result);
                     }
                 });
@@ -183,7 +260,8 @@ public class SpotifySDK extends Plugin {
                     @Override
                     public void onEvent(PlayerState playerState) {
                         JSObject event = new JSObject();
-                        event.put("state", playerState);
+                        Gson gson = new Gson();
+                        event.put("state", gson.toJson(playerState));
                         notifyListeners("playerState", event);
                     }
                 });
@@ -197,7 +275,8 @@ public class SpotifySDK extends Plugin {
                     @Override
                     public void onEvent(PlayerContext playerContext) {
                         JSObject event = new JSObject();
-                        event.put("context", playerContext);
+                        Gson gson = new Gson();
+                        event.put("context", gson.toJson(playerContext));
                         notifyListeners("playerContext", event);
                     }
                 });

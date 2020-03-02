@@ -46,5 +46,6 @@ dependencies {
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
     implementation project(path: ':spotify-app-remote')
     implementation project(path: ':spotify-auth')
+    implementation "com.google.code.gson:gson:2.8.5"
 }
 
